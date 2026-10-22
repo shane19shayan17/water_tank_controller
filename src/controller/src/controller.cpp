@@ -14,7 +14,7 @@ struct OutputMsg
 {
     float water_level;
     float desired_level;
-    bool running;
+    bool running = false;
 };
 
 class ControllerNode : public rclcpp::Node
