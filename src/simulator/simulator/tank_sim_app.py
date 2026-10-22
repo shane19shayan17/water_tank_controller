@@ -9,6 +9,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 import rclpy
 from simulator.tank_node import TankNode
+from water_tank_interface.msg import TankOutput
 
 
 # ── Simulation constants ─────────────────────────────────────────────────────
@@ -283,7 +284,12 @@ class TankSimulationApp(tk.Tk):
             return
 
         measured_level = self.sensor.read(self.tank.level)
-        self.node.publish_level(measured_level)      # -> /tank_level
+        
+        # fill the output here
+        output = TankOutput()
+        output.level = float(measured_level)
+        output.desired_level = float(self.var_hh.get())
+        self.node.publish_data(output)      # -> /tank_level
 
         # Command from the C++ controller goes straight to the valve.
         self.valve.set_demand(self.node.get_cmd())   # clips to 0-100

@@ -10,6 +10,12 @@ using TankOutput = water_tank_interface::msg::TankOutput;
 #include "../include/PID.hpp"
 #include <array>
 
+struct OutputMsg
+{
+    float water_level;
+    float desired_level;
+};
+
 class ControllerNode : public rclcpp::Node
 {
 public:
@@ -21,7 +27,7 @@ public:
             10);
 
         sub_tank_output_ = this->create_subscription<TankOutput>(
-            "/water_level",
+            "/tank_output",
             10,
             std::bind(&ControllerNode::tank_output_callback, this, std::placeholders::_1));
 
@@ -45,36 +51,22 @@ public:
     }
 
 private:
-    float water_level{0};
-    float error{0};
-    float sum_error{0};
-    const float d_t{0.1};
-    float prev_error{0};
-    float k_p{90.0};
-    float k_I{0.00005};
-    float k_D{0.0};
-
     void timer_callback()
     {
-        tank_input_.inlet_valve = pid(4.15); // sample output
+        tank_input_.inlet_valve = compute_pid(tank_output.desired_level, tank_output.water_level);
+
         publisher_->publish(tank_input_);
     }
 
     void tank_output_callback(const TankOutput::SharedPtr msg)
     {
-        water_level = msg->level;
+        tank_output.water_level = msg->level;
+        tank_output.desired_level = msg->desired_level;
     }
 
-    float pid(float referense)
+    float compute_pid(float reference, float current)
     {
-
-        error = referense - water_level;
-        sum_error += error * d_t;
-        float derivate = error / d_t;
-
-        prev_error = error;
-
-        return (k_p * error) + (k_I * sum_error) + (derivate * k_D);
+        return level_controller_pid_.get_pid(reference - current, reference);
     }
 
     /*
@@ -101,6 +93,8 @@ private:
     PID level_controller_pid_{};
     float pid_gains_[4];
     int dt_ms = 100;
+    int dt_s = dt_ms / 1000.0;
+    OutputMsg tank_output;
 };
 
 int main(int argc, char *argv[])

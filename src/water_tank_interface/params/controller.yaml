@@ -1,6 +1,6 @@
 controller:
   ros__parameters:
-    k_p: 1.0
+    k_p: 50.0
     k_i: 0.0
     k_d: 0.0
     k_ff: 0.0
