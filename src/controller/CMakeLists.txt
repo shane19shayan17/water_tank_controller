@@ -12,7 +12,8 @@ find_package(water_tank_interface REQUIRED)
 
 
 add_executable(controller
-  src/controller.cpp)
+  src/controller.cpp
+  src/PID.cpp)
 ament_target_dependencies(controller
     rclcpp
     water_tank_interface)
