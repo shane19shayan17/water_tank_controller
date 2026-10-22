@@ -14,6 +14,7 @@ struct OutputMsg
 {
     float water_level;
     float desired_level;
+    bool running;
 };
 
 class ControllerNode : public rclcpp::Node
@@ -53,6 +54,12 @@ public:
 private:
     void timer_callback()
     {
+        if (!tank_output.running)
+        {
+            RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 250, "waiting for simulator to run !");
+            return;
+        }
+
         tank_input_.inlet_valve = compute_pid(tank_output.desired_level, tank_output.water_level);
 
         publisher_->publish(tank_input_);
@@ -62,6 +69,7 @@ private:
     {
         tank_output.water_level = msg->level;
         tank_output.desired_level = msg->desired_level;
+        tank_output.running = msg->simulator_running;
     }
 
     float compute_pid(float reference, float current)

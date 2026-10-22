@@ -15,8 +15,8 @@ from water_tank_interface.msg import TankOutput
 # ── Simulation constants ─────────────────────────────────────────────────────
 TANK_AREA = 0.50
 MAX_LEVEL = 5.0
-MAX_FLOW_IN = 0.15
-VALVE_TAU = 2.0
+MAX_FLOW_IN = 0.35
+VALVE_TAU = .1
 SENSOR_NOISE = 0.02
 DT = 0.1
 HISTORY_LEN = 300
@@ -280,18 +280,18 @@ class TankSimulationApp(tk.Tk):
 
     # ── Simulation ───────────────────────────────────────────────────────────
     def _step(self):
-        if not self.running:
-            return
-
         measured_level = self.sensor.read(self.tank.level)
         
         # fill the output here
         output = TankOutput()
         output.level = float(measured_level)
         output.desired_level = float(self.var_hh.get())
-        self.node.publish_data(output)      # -> /tank_level
-
-        # Command from the C++ controller goes straight to the valve.
+        output.simulator_running = self.running
+        self.node.publish_data(output)  
+        
+        if not self.running:
+            return
+        
         self.valve.set_demand(self.node.get_cmd())   # clips to 0-100
         self.valve.update(DT)
         self.tank.drain_coeff = self.var_drain.get()
